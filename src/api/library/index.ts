@@ -6,6 +6,7 @@ import { db } from '@/db'
 import { library } from '@/db/schema/library'
 import { TRPCError } from '@trpc/server'
 import _ from 'lodash'
+import differenceWith from 'lodash/differenceWith'
 import { parseFile } from 'music-metadata'
 import { z } from 'zod'
 import { getConfig } from '../config'
@@ -24,13 +25,14 @@ export default server.router({
     )
     const dbFiles = await db.select().from(library)
 
-    const filesNotInDb = _.differenceWith(
+    const filesNotInDb = differenceWith(
       localFiles,
       dbFiles,
       (localFile, dbFile) => `${localLibraryPath}/${localFile}` === dbFile.filepath
     )
 
     const fileList = dbFiles
+    const filesToInsert: typeof dbFiles = []
     for (const file of filesNotInDb) {
       const meta = await parseFile(path.join(localLibraryPath, file))
       const outputMeta = {
@@ -47,8 +49,11 @@ export default server.router({
         filename: file.split('/').pop() ?? null,
       }
       fileList.push(outputMeta)
+      filesToInsert.push(outputMeta)
     }
-    await db.insert(library).values(fileList)
+    if (filesToInsert.length > 0) {
+      await db.insert(library).values(filesToInsert)
+    }
     return { fileList }
   }),
   findDuplicates: server.procedure
@@ -59,7 +64,7 @@ export default server.router({
         matchFilename: z.boolean(),
       })
     )
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       function compareTwoStrings(a: string, b: string) {
         const first = a.replace(/[^A-Z0-9]+/gi, '')
         const second = b.replace(/[^A-Z0-9]+/gi, '')
@@ -103,24 +108,34 @@ export default server.router({
             similarities.push(compareTwoStrings(file1.artist, file2.artist))
           }
         }
-        if (input.matchFilename) {
+        if (input.matchFilename && file1.filename && file2.filename) {
           similarities.push(compareTwoStrings(file1.filename, file2.filename))
         }
         return similarities.length > 0 ? _.mean(similarities) : 0
       }
-      const duplicateGroups = _(files)
-        .flatMap((file, index) =>
-          _(files)
-            .slice(index + 1)
-            .filter((otherFile) => calculateSimilarity(file, otherFile) >= input.probability)
-            .map((similarFile) => [file, similarFile])
-            .value()
-        )
-        .groupBy((pair) => pair[0].id)
-        .values()
-        .map((groups) => _.uniqBy(_.flatten(groups), 'id'))
-        .filter((group) => group.length > 1)
-        .value()
+      const duplicateGroups: (typeof files)[] = []
+      const processedIds = new Set<string>()
+
+      for (let i = 0; i < files.length; i++) {
+        if (processedIds.has(files[i].id)) continue
+
+        const group = [files[i]]
+        processedIds.add(files[i].id)
+
+        for (let j = i + 1; j < files.length; j++) {
+          if (processedIds.has(files[j].id)) continue
+
+          const similarity = calculateSimilarity(files[i], files[j])
+          if (similarity >= input.probability) {
+            group.push(files[j])
+            processedIds.add(files[j].id)
+          }
+        }
+
+        if (group.length > 1) {
+          duplicateGroups.push(group)
+        }
+      }
       return { duplicateGroups }
     }),
 })

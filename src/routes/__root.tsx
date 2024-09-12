@@ -27,7 +27,7 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           <div className='grid grid-rows-[56px_1fr_auto] gap-4 min-h-screen h-screen'>
             <Header />
-            <div className='px-8'>
+            <div className='px-8 overflow-auto'>
               <Outlet />
             </div>
             <MusicPlayer />

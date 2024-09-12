@@ -42,5 +42,5 @@ function Index() {
     )
   }
 
-  return <MusicFileTable searchable scrollable musicFiles={data?.fileList || []} />
+  return <MusicFileTable searchable musicFiles={data?.fileList || []} />
 }

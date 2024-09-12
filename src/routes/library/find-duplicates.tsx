@@ -13,13 +13,10 @@ const FindDuplicates = () => {
   const [matchTags, setMatchTags] = useState(true)
   const [matchFilename, setMatchFilename] = useState(false)
 
-  const { data, isFetching, refetch } = trpc.library.findDuplicates.useQuery(
-    { probability: probability[0], matchTags, matchFilename },
-    { enabled: false }
-  )
+  const { data, isLoading, mutate } = trpc.library.findDuplicates.useMutation()
 
   const handleFindDuplicates = () => {
-    refetch()
+    mutate({ probability: probability[0], matchTags, matchFilename })
   }
 
   return (
@@ -68,9 +65,9 @@ const FindDuplicates = () => {
             </div>
             <Button
               onClick={handleFindDuplicates}
-              disabled={isFetching || (!matchTags && !matchFilename)}
+              disabled={isLoading || (!matchTags && !matchFilename)}
             >
-              {isFetching ? 'Searching...' : 'Find Duplicates'}
+              {isLoading ? 'Searching...' : 'Find Duplicates'}
             </Button>
           </div>
         </CardContent>

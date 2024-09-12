@@ -16,7 +16,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { cn } from '@/lib/utils'
 import type { MusicFile } from '@/types/library'
 import {
   type ColumnDef,
@@ -31,7 +30,6 @@ import {
 import debounce from 'lodash/debounce'
 import { ArrowUpDown, MoreHorizontal, Play } from 'lucide-react'
 import React, { useState, useCallback, useMemo } from 'react'
-import { ScrollArea, ScrollBar } from '../ui/scroll-area'
 import { useMusicPlayerStore } from './music-player'
 
 const TruncatedCell = React.memo(({ content }: { content: string }) => (
@@ -189,7 +187,7 @@ const columns: ColumnDef<MusicFile>[] = [
         setCurrentTrack({
           title: music.title || '',
           artist: music.artist || '',
-          audioSrc: music.filepath,
+          audioSrc: music.filepath || '',
         })
       }
 
@@ -209,14 +207,9 @@ const columns: ColumnDef<MusicFile>[] = [
 interface Props {
   musicFiles?: MusicFile[]
   searchable?: boolean
-  scrollable?: boolean
 }
 
-export default function MusicFileTable({
-  musicFiles = [],
-  searchable = false,
-  scrollable = false,
-}: Props) {
+export default function MusicFileTable({ musicFiles = [], searchable = false }: Props) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState('')
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
@@ -255,10 +248,8 @@ export default function MusicFileTable({
     [debouncedSearch]
   )
 
-  const ScrollComponent = scrollable ? ScrollArea : 'div'
-
   return (
-    <div className='space-y-6'>
+    <div className='flex gap-6 flex-col h-full'>
       <div className='flex justify-between items-center'>
         {searchable ? (
           <Input
@@ -294,35 +285,32 @@ export default function MusicFileTable({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <ScrollComponent className={cn('rounded-md border', { 'h-[80vh]': scrollable })}>
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        {scrollable && <ScrollBar />}
-      </ScrollComponent>
+      <Table>
+        <TableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <TableHead key={header.id}>
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(header.column.columnDef.header, header.getContext())}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows.map((row) => (
+            <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+              {row.getVisibleCells().map((cell) => (
+                <TableCell key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   )
 }
