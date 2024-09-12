@@ -93,4 +93,5 @@ typings/
 out/
 
 # SQLite
+drizzle/
 sqlite.db
