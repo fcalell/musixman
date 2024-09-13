@@ -6,7 +6,7 @@
   "main": ".vite/build/main.js",
   "type": "module",
   "scripts": {
-    "dev": "electron-forge start",
+    "dev": "drizzle-kit generate && electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish"
@@ -84,6 +84,5 @@
     "name": "fcalell",
     "email": "frankie.calella@gmail.com"
   },
-  "license": "MIT",
-  "packageManager": "yarn@4.4.0"
+  "license": "MIT"
 }
