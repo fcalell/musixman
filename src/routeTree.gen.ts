@@ -54,31 +54,32 @@ declare module '@tanstack/react-router' {
 
 // Create and export the route tree
 
-interface FileRoutesByFullPath {
+export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
   '/library/find-duplicates': typeof LibraryFindDuplicatesRoute
 }
 
-interface FileRoutesByTo {
+export interface FileRoutesByTo {
   '/': typeof IndexLazyRoute
   '/library/find-duplicates': typeof LibraryFindDuplicatesRoute
 }
 
-interface FileRoutesById {
+export interface FileRoutesById {
+  __root__: typeof rootRoute
   '/': typeof IndexLazyRoute
   '/library/find-duplicates': typeof LibraryFindDuplicatesRoute
 }
 
-interface FileRouteTypes {
+export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths: '/' | '/library/find-duplicates'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/library/find-duplicates'
-  id: '/' | '/library/find-duplicates'
+  id: '__root__' | '/' | '/library/find-duplicates'
   fileRoutesById: FileRoutesById
 }
 
-interface RootRouteChildren {
+export interface RootRouteChildren {
   IndexLazyRoute: typeof IndexLazyRoute
   LibraryFindDuplicatesRoute: typeof LibraryFindDuplicatesRoute
 }

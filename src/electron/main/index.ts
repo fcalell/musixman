@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { router } from '@/api'
 import { dbMigrate } from '@/db'
-import { BrowserWindow, app, protocol } from 'electron'
-import { createIPCHandler } from 'electron-trpc/main'
+import type { IpcRequest } from '@/types/ipc'
+import { net, BrowserWindow, app, ipcMain, protocol } from 'electron'
+import { ipcRequestHandler } from './ipcTrpcRequestHandler'
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -18,8 +19,6 @@ const createWindow = () => {
       preload: path.join(import.meta.dirname, 'preload.js'),
     },
   })
-
-  createIPCHandler({ router, windows: [mainWindow] })
 
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
@@ -41,16 +40,25 @@ protocol.registerSchemesAsPrivileged([{ scheme: 'local-file', privileges: { bypa
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
+  // Run migrations
   await dbMigrate()
-  protocol.registerFileProtocol('local-file', (request, callback) => {
-    const url = request.url.replace('local-file://', '')
-    try {
-      return callback(decodeURIComponent(url))
-    } catch (error) {
-      // Handle the error as needed
-      console.error(error)
-    }
+  // Handle custom schema for loading local files
+  protocol.handle('local-file', (request) => {
+    const url = request.url.replace('local-file://', 'file://')
+    return net.fetch(decodeURIComponent(url))
   })
+  // Enable integration with TRPC
+  ipcMain.handle('trpc', (event, req: IpcRequest) => {
+    return ipcRequestHandler({
+      endpoint: '/trpc',
+      req,
+      router,
+      createContext: async () => {
+        return {}
+      },
+    })
+  })
+
   createWindow()
 })
 

@@ -1,5 +1,11 @@
-import { exposeElectronTRPC } from 'electron-trpc/main'
+import type { IElectronAPI, IpcRequest } from '@/types/ipc'
+import { contextBridge, ipcRenderer } from 'electron'
 
-process.once('loaded', async () => {
-  exposeElectronTRPC()
-})
+const api: IElectronAPI = {
+  node: () => process.versions.node,
+  chrome: () => process.versions.chrome,
+  electron: () => process.versions.electron,
+  trpc: (req: IpcRequest) => ipcRenderer.invoke('trpc', req),
+}
+
+contextBridge.exposeInMainWorld('appApi', api)

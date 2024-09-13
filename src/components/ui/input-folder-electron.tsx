@@ -1,8 +1,7 @@
 import { Button } from '@/components/ui/button'
-import { trpc } from '@/lib/utils'
+import { trpc } from '@/lib/trpc'
 import { FolderInputIcon } from 'lucide-react'
 import type { FC } from 'react'
-import { Label } from './label'
 
 interface InputFolderElectronProps {
   value?: string | null

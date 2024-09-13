@@ -1,7 +1,6 @@
 import Header from '@/components/features/header'
 import MusicPlayer from '@/components/features/music-player'
-import { createTrpcClient } from '@/lib/utils'
-import { trpc } from '@/lib/utils'
+import { createTrpcClient, trpc } from '@/lib/trpc'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Outlet, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/router-devtools'

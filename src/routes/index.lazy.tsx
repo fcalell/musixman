@@ -1,6 +1,6 @@
 import MusicFileTable from '@/components/features/music-file-table'
 import { Button } from '@/components/ui/button'
-import { trpc } from '@/lib/utils'
+import { trpc } from '@/lib/trpc'
 import { createLazyFileRoute } from '@tanstack/react-router'
 
 export const Route = createLazyFileRoute('/')({

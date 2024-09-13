@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/form'
 import InputFolderElectron from '@/components/ui/input-folder-electron'
 import { insertConfigSchema } from '@/db/schema/config'
-import { trpc } from '@/lib/utils'
+import { trpc } from '@/lib/trpc'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { FC } from 'react'
 import { useForm } from 'react-hook-form'

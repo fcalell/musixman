@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { trpc } from '@/lib/utils'
+import { trpc } from '@/lib/trpc'
 import { Settings } from 'lucide-react'
 import { useState } from 'react'
 import {

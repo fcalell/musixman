@@ -5,8 +5,8 @@ import { promisify } from 'node:util'
 import { db } from '@/db'
 import { library } from '@/db/schema/library'
 import { TRPCError } from '@trpc/server'
-import _ from 'lodash'
 import differenceWith from 'lodash/differenceWith'
+import mean from 'lodash/mean'
 import { parseFile } from 'music-metadata'
 import { z } from 'zod'
 import { getConfig } from '../config'
@@ -111,7 +111,7 @@ export default server.router({
         if (input.matchFilename && file1.filename && file2.filename) {
           similarities.push(compareTwoStrings(file1.filename, file2.filename))
         }
-        return similarities.length > 0 ? _.mean(similarities) : 0
+        return similarities.length > 0 ? mean(similarities) : 0
       }
       const duplicateGroups: (typeof files)[] = []
       const processedIds = new Set<string>()

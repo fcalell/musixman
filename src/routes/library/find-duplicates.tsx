@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
-import { trpc } from '@/lib/utils'
+import { trpc } from '@/lib/trpc'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 
@@ -13,7 +13,7 @@ const FindDuplicates = () => {
   const [matchTags, setMatchTags] = useState(true)
   const [matchFilename, setMatchFilename] = useState(false)
 
-  const { data, isLoading, mutate } = trpc.library.findDuplicates.useMutation()
+  const { data, isPending, mutate } = trpc.library.findDuplicates.useMutation()
 
   const handleFindDuplicates = () => {
     mutate({ probability: probability[0], matchTags, matchFilename })
@@ -65,9 +65,9 @@ const FindDuplicates = () => {
             </div>
             <Button
               onClick={handleFindDuplicates}
-              disabled={isLoading || (!matchTags && !matchFilename)}
+              disabled={isPending || (!matchTags && !matchFilename)}
             >
-              {isLoading ? 'Searching...' : 'Find Duplicates'}
+              {isPending ? 'Searching...' : 'Find Duplicates'}
             </Button>
           </div>
         </CardContent>
