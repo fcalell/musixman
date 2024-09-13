@@ -43,12 +43,18 @@ app.on('ready', async () => {
   // Run migrations
   await dbMigrate()
   // Handle custom schema for loading local files
-  protocol.handle('local-file', (request) => {
-    const url = request.url.replace('local-file://', 'file://')
-    return net.fetch(decodeURIComponent(url))
+  // TODO: Update the protocol handler once it's fixed https://github.com/electron/electron/issues/38749
+  //
+  // protocol.handle('local-file', (request) => {
+  //   const url = request.url.replace('local-file://', 'file://')
+  //   return net.fetch(decodeURIComponent(url))
+  // })
+  protocol.registerFileProtocol('local-file', (req, callback) => {
+    const pathToMedia = decodeURI(`${req.url.replace('local-file://', '')}`)
+    callback(pathToMedia)
   })
   // Enable integration with TRPC
-  ipcMain.handle('trpc', (event, req: IpcRequest) => {
+  ipcMain.handle('trpc', (_, req: IpcRequest) => {
     return ipcRequestHandler({
       endpoint: '/trpc',
       req,
