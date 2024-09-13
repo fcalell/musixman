@@ -2,7 +2,7 @@ import path from 'node:path'
 import { router } from '@/api'
 import { dbMigrate } from '@/db'
 import type { IpcRequest } from '@/types/ipc'
-import { net, BrowserWindow, app, ipcMain, protocol } from 'electron'
+import { BrowserWindow, app, ipcMain, protocol } from 'electron'
 import { ipcRequestHandler } from './ipcTrpcRequestHandler'
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
