@@ -30,6 +30,7 @@ import {
 import debounce from 'lodash/debounce'
 import { ArrowUpDown, MoreHorizontal, Play } from 'lucide-react'
 import React, { useState, useCallback, useMemo } from 'react'
+import DeleteFileButton from './library/delete-file-button'
 import { useMusicPlayerStore } from './music-player'
 
 const TruncatedCell = React.memo(({ content }: { content: string }) => (
@@ -141,7 +142,7 @@ const columns: ColumnDef<MusicFile>[] = [
       const seconds = Math.floor(duration - minutes * 60)
       return (
         <span>
-          {minutes}:{seconds}
+          {minutes}:{seconds < 10 ? `0${seconds}` : seconds}
         </span>
       )
     },
@@ -192,14 +193,17 @@ const columns: ColumnDef<MusicFile>[] = [
       }
 
       return (
-        <Button
-          variant='ghost'
-          size='icon'
-          onClick={playTrack}
-          aria-label={`Play ${music.title || music.filename}`}
-        >
-          <Play className='h-4 w-4' />
-        </Button>
+        <div className='flex gap-1'>
+          <Button
+            variant='ghost'
+            size='icon'
+            onClick={playTrack}
+            aria-label={`Play ${music.title || music.filename}`}
+          >
+            <Play className='h-4 w-4' />
+          </Button>
+          <DeleteFileButton musicFile={music} />
+        </div>
       )
     },
   },

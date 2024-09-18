@@ -5,6 +5,7 @@ import { promisify } from 'node:util'
 import { db } from '@/db'
 import { library } from '@/db/schema/library'
 import { TRPCError } from '@trpc/server'
+import { eq } from 'drizzle-orm'
 import differenceWith from 'lodash/differenceWith'
 import mean from 'lodash/mean'
 import { parseFile } from 'music-metadata'
@@ -12,6 +13,7 @@ import { z } from 'zod'
 import { getConfig } from '../config'
 import server from '../server'
 const readdir = promisify(fs.readdir)
+const unlink = promisify(fs.unlink)
 
 export default server.router({
   getLocal: server.procedure.query(async () => {
@@ -45,7 +47,7 @@ export default server.router({
         comment: meta.common.comment?.at(0)?.text ?? null,
         bitrate: (meta.format.bitrate && Math.floor(meta.format.bitrate / 1000)) ?? null,
         duration: meta.format.duration ?? null,
-        filepath: `${localLibraryPath}/${file}` ?? null,
+        filepath: `${localLibraryPath}/${file}`,
         filename: file.split('/').pop() ?? null,
       }
       fileList.push(outputMeta)
@@ -55,6 +57,35 @@ export default server.router({
       await db.insert(library).values(filesToInsert)
     }
     return { fileList }
+  }),
+  deleteFile: server.procedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+    try {
+      // Get the file information
+      const files = await db.select().from(library).where(eq(library.id, input.id)).limit(1)
+      const file = files[0]
+      if (!file) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'File not found in the database',
+        })
+      }
+
+      if (file.filepath) {
+        // Delete the file from the filesystem
+        await unlink(file.filepath)
+      }
+
+      // Delete the file from the database
+      await db.delete(library).where(eq(library.id, input.id))
+
+      return { success: true, message: 'File deleted successfully' }
+    } catch (error) {
+      console.error('Error deleting file:', error)
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'An error occurred while deleting the file',
+      })
+    }
   }),
   findDuplicates: server.procedure
     .input(

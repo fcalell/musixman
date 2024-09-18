@@ -12,6 +12,7 @@ const App = () => {
         defaultOptions: {
           queries: {
             staleTime: Number.POSITIVE_INFINITY,
+            retry: false,
             refetchOnMount: false,
             refetchOnReconnect: false,
             refetchOnWindowFocus: false,
