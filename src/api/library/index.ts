@@ -9,6 +9,7 @@ import { eq } from 'drizzle-orm'
 import differenceWith from 'lodash/differenceWith'
 import mean from 'lodash/mean'
 import { parseFile } from 'music-metadata'
+import NodeID3 from 'node-id3'
 import { z } from 'zod'
 import { getConfig } from '../config'
 import server from '../server'
@@ -36,7 +37,8 @@ export default server.router({
     const fileList = dbFiles
     const filesToInsert: typeof dbFiles = []
     for (const file of filesNotInDb) {
-      const meta = await parseFile(path.join(localLibraryPath, file))
+      const filepath = path.join(localLibraryPath, file)
+      const meta = await parseFile(filepath)
       const outputMeta = {
         id: randomUUID(),
         title: meta.common.title ?? null,
@@ -53,10 +55,30 @@ export default server.router({
       fileList.push(outputMeta)
       filesToInsert.push(outputMeta)
     }
+
+    const fileList2 = []
+    for (const file of localFiles) {
+      const filepath = path.join(localLibraryPath, file)
+      if (
+        filepath.toLowerCase().indexOf('fmif') > -1 ||
+        filepath.toLowerCase().indexOf('everybody') > -1
+      ) {
+        const meta = await parseFile(filepath)
+        const o2 = {
+          title: meta.common.title,
+          id3Genre: NodeID3.read(filepath).genre,
+          id3: NodeID3.read(filepath).length,
+          version: meta.native,
+          metaGenre: meta.common.genre,
+        }
+        fileList2.push(o2)
+      }
+    }
+
     if (filesToInsert.length > 0) {
       await db.insert(library).values(filesToInsert)
     }
-    return { fileList }
+    return { fileList, fileList2 }
   }),
   deleteFile: server.procedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
     try {
