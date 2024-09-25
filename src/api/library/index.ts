@@ -4,12 +4,12 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { db } from '@/db'
 import { library } from '@/db/schema/library'
+import getAudioFileInfo from '@/lib/audio-file-info'
 import { TRPCError } from '@trpc/server'
 import { eq } from 'drizzle-orm'
 import differenceWith from 'lodash/differenceWith'
 import mean from 'lodash/mean'
 import { parseFile } from 'music-metadata'
-import NodeID3 from 'node-id3'
 import { z } from 'zod'
 import { getConfig } from '../config'
 import server from '../server'
@@ -59,21 +59,42 @@ export default server.router({
     const fileList2 = []
     for (const file of localFiles) {
       const filepath = path.join(localLibraryPath, file)
-      if (
-        filepath.toLowerCase().indexOf('fmif') > -1 ||
-        filepath.toLowerCase().indexOf('everybody') > -1
-      ) {
-        const meta = await parseFile(filepath)
-        const o2 = {
-          title: meta.common.title,
-          id3Genre: NodeID3.read(filepath).genre,
-          id3: NodeID3.read(filepath).length,
-          version: meta.native,
-          metaGenre: meta.common.genre,
-        }
-        fileList2.push(o2)
+      const meta = await parseFile(filepath)
+      const meta2 = await getAudioFileInfo(filepath)
+
+      const minutes1 = Math.floor(meta.format.duration / 60)
+      const seconds1 = Math.floor(meta.format.duration - minutes1 * 60)
+      const duration1 = `${minutes1}:${seconds1}`
+
+      const minutes2 = Math.floor(meta2.duration / 60)
+      const seconds2 = Math.floor(meta2.duration - minutes2 * 60)
+      const duration2 = `${minutes2}:${seconds2}`
+
+      const o = {
+        filepath,
+        duration1,
+        duration2,
+        bitrate1: Math.floor(meta.format.bitrate / 1000),
+        bitrate2: meta2.bitrate,
       }
+      if (o.bitrate2 !== o.bitrate1) fileList2.push(o)
     }
+
+    // music metadata performance
+    // const p1s = performance.now()
+    // for (const file of localFiles) {
+    //   const filepath = path.join(localLibraryPath, file)
+    //   const meta = await parseFile(filepath)
+    // }
+    // const p1e = performance.now()
+    // console.log('music-metadata: ', p1e - p1s)
+    // const p2s = performance.now()
+    // for (const file of localFiles) {
+    //   const filepath = path.join(localLibraryPath, file)
+    //   const meta = await getMP3Info(filepath)
+    // }
+    // const p2e = performance.now()
+    // console.log('with gpt: ', p2e - p2s)
 
     if (filesToInsert.length > 0) {
       await db.insert(library).values(filesToInsert)
