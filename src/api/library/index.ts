@@ -13,6 +13,7 @@ import { parseFile } from 'music-metadata'
 import { z } from 'zod'
 import { getConfig } from '../config'
 import server from '../server'
+
 const readdir = promisify(fs.readdir)
 const unlink = promisify(fs.unlink)
 
@@ -70,31 +71,40 @@ export default server.router({
       const seconds2 = Math.floor(meta2.duration - minutes2 * 60)
       const duration2 = `${minutes2}:${seconds2}`
 
+      const bitrate1 = Math.floor(meta.format.bitrate / 1000)
+      const bitrate2 = Math.floor(meta2.bitrate)
       const o = {
         filepath,
         duration1,
         duration2,
-        bitrate1: Math.floor(meta.format.bitrate / 1000),
-        bitrate2: meta2.bitrate,
+        bitrate1,
+        bitrate2,
       }
-      if (o.bitrate2 !== o.bitrate1) fileList2.push(o)
+      if (o.bitrate2 !== o.bitrate1 || o.duration1 !== o.duration2) fileList2.push(o)
     }
 
     // music metadata performance
-    // const p1s = performance.now()
-    // for (const file of localFiles) {
-    //   const filepath = path.join(localLibraryPath, file)
-    //   const meta = await parseFile(filepath)
-    // }
-    // const p1e = performance.now()
-    // console.log('music-metadata: ', p1e - p1s)
-    // const p2s = performance.now()
-    // for (const file of localFiles) {
-    //   const filepath = path.join(localLibraryPath, file)
-    //   const meta = await getMP3Info(filepath)
-    // }
-    // const p2e = performance.now()
-    // console.log('with gpt: ', p2e - p2s)
+    const p1s = performance.now()
+    for (const file of localFiles) {
+      const filepath = path.join(localLibraryPath, file)
+      await parseFile(filepath)
+    }
+    const p1e = performance.now()
+    console.log('music-metadata: ', p1e - p1s)
+    const p2s = performance.now()
+    for (const file of localFiles) {
+      const filepath = path.join(localLibraryPath, file)
+      await getAudioFileInfo(filepath)
+    }
+    const p2e = performance.now()
+    console.log('with gpt: ', p2e - p2s)
+    // const p3s = performance.now()
+    // const limit = pLimit(30)
+    // const tasks = localFiles.map((file) => limit(() => ffprobe(path.join(localLibraryPath, file))))
+    // await Promise.all(tasks)
+    // const p3e = performance.now()
+    // console.log('with ffprobe: ', p3e - p3s)
+    // END PERFORMANCE TEST
 
     if (filesToInsert.length > 0) {
       await db.insert(library).values(filesToInsert)
