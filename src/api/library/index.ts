@@ -4,12 +4,12 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { db } from '@/db'
 import { library } from '@/db/schema/library'
-import getAudioFileInfo from '@/lib/audio-file-info'
 import { TRPCError } from '@trpc/server'
 import { eq } from 'drizzle-orm'
 import differenceWith from 'lodash/differenceWith'
 import mean from 'lodash/mean'
 import { parseFile } from 'music-metadata'
+import NodeID3 from 'node-id3'
 import { z } from 'zod'
 import { getConfig } from '../config'
 import server from '../server'
@@ -39,17 +39,19 @@ export default server.router({
     const filesToInsert: typeof dbFiles = []
     for (const file of filesNotInDb) {
       const filepath = path.join(localLibraryPath, file)
-      const meta = await parseFile(filepath)
+      const { format } = await parseFile(filepath, { skipCovers: true })
+      const tags = NodeID3.read(filepath, { noRaw: true })
       const outputMeta = {
         id: randomUUID(),
-        title: meta.common.title ?? null,
-        artist: meta.common.artist ?? null,
-        album: meta.common.album ?? null,
-        genre: meta.common.genre ?? null,
-        year: meta.common.year ?? null,
-        comment: meta.common.comment?.at(0)?.text ?? null,
-        bitrate: (meta.format.bitrate && Math.floor(meta.format.bitrate / 1000)) ?? null,
-        duration: meta.format.duration ?? null,
+        title: tags.title ?? null,
+        artist: tags.artist ?? null,
+        album: tags.album ?? null,
+        genre: tags.genre ?? null,
+        year: tags.year ? Number.parseInt(tags.year, 10) : null,
+        comment: tags.comment?.text ?? null,
+        // Techincal params
+        bitrate: (format.bitrate && Math.round(format.bitrate / 1000)) ?? null,
+        duration: format.duration ?? null,
         filepath: `${localLibraryPath}/${file}`,
         filename: file.split('/').pop() ?? null,
       }
@@ -57,59 +59,10 @@ export default server.router({
       filesToInsert.push(outputMeta)
     }
 
-    const fileList2 = []
-    for (const file of localFiles) {
-      const filepath = path.join(localLibraryPath, file)
-      const meta = await parseFile(filepath)
-      const meta2 = await getAudioFileInfo(filepath)
-
-      const minutes1 = Math.floor(meta.format.duration / 60)
-      const seconds1 = Math.floor(meta.format.duration - minutes1 * 60)
-      const duration1 = `${minutes1}:${seconds1}`
-
-      const minutes2 = Math.floor(meta2.duration / 60)
-      const seconds2 = Math.floor(meta2.duration - minutes2 * 60)
-      const duration2 = `${minutes2}:${seconds2}`
-
-      const bitrate1 = Math.floor(meta.format.bitrate / 1000)
-      const bitrate2 = Math.floor(meta2.bitrate)
-      const o = {
-        filepath,
-        duration1,
-        duration2,
-        bitrate1,
-        bitrate2,
-      }
-      if (o.bitrate2 !== o.bitrate1 || o.duration1 !== o.duration2) fileList2.push(o)
-    }
-
-    // music metadata performance
-    const p1s = performance.now()
-    for (const file of localFiles) {
-      const filepath = path.join(localLibraryPath, file)
-      await parseFile(filepath)
-    }
-    const p1e = performance.now()
-    console.log('music-metadata: ', p1e - p1s)
-    const p2s = performance.now()
-    for (const file of localFiles) {
-      const filepath = path.join(localLibraryPath, file)
-      await getAudioFileInfo(filepath)
-    }
-    const p2e = performance.now()
-    console.log('with gpt: ', p2e - p2s)
-    // const p3s = performance.now()
-    // const limit = pLimit(30)
-    // const tasks = localFiles.map((file) => limit(() => ffprobe(path.join(localLibraryPath, file))))
-    // await Promise.all(tasks)
-    // const p3e = performance.now()
-    // console.log('with ffprobe: ', p3e - p3s)
-    // END PERFORMANCE TEST
-
     if (filesToInsert.length > 0) {
       await db.insert(library).values(filesToInsert)
     }
-    return { fileList, fileList2 }
+    return { fileList }
   }),
   deleteFile: server.procedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
     try {

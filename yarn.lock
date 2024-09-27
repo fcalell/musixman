@@ -2569,7 +2569,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tanstack/react-virtual@npm:^3.10.7":
+"@tanstack/react-virtual@npm:^3.10.8":
   version: 3.10.8
   resolution: "@tanstack/react-virtual@npm:3.10.8"
   dependencies:
@@ -8826,7 +8826,7 @@ __metadata:
     "@tanstack/react-query": "npm:^5.56.1"
     "@tanstack/react-router": "npm:^1.57.10"
     "@tanstack/react-table": "npm:^8.20.5"
-    "@tanstack/react-virtual": "npm:^3.10.7"
+    "@tanstack/react-virtual": "npm:^3.10.8"
     "@tanstack/router-devtools": "npm:^1.57.10"
     "@tanstack/router-plugin": "npm:^1.57.9"
     "@total-typescript/ts-reset": "npm:^0.6.1"

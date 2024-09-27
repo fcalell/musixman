@@ -48,9 +48,9 @@ const TruncatedCell = React.memo(({ content }: { content: string }) => (
 
 TruncatedCell.displayName = 'TruncatedCell'
 
-const GenreBadges = React.memo(({ genres }: { genres: string[] }) => (
+const GenreBadges = React.memo(({ genre }: { genre: string }) => (
   <div className='flex flex-wrap gap-1'>
-    {genres.map((genre) => (
+    {genre.split(',').map((genre) => (
       <Badge key={genre} variant='secondary'>
         {genre}
       </Badge>
@@ -113,8 +113,8 @@ const columns: ColumnDef<MusicFile>[] = [
     accessorKey: 'genre',
     header: 'Genre',
     cell: ({ row }) => {
-      const genres = row.getValue('genre') as string[] | undefined
-      return genres ? <GenreBadges genres={genres} /> : null
+      const genres = row.getValue('genre') as string | undefined
+      return genres ? <GenreBadges genre={genres} /> : null
     },
   },
   {
