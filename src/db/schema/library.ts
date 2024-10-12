@@ -6,7 +6,7 @@ export const library = sqliteTable('library', {
   title: text('title'),
   artist: text('artist'),
   album: text('album'),
-  genre: text('genre', { mode: 'json' }),
+  genre: text('genre'),
   year: integer('year'),
   comment: text('comment'),
   bitrate: integer('bitrate'),
